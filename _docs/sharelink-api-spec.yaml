@@ -59,13 +59,13 @@ securityDefinitions:
     type: apiKey
     name: X-Sharelink-Token
     in: header
-    description: Token for permissing sharelinks (for recipients)
+    description: Token for accessing sharelinks (for recipients)
 
 tags:
   - name: Sharelinks
     description: Sharelink creation and management
-  - name: Permiss
-    description: Sharelink permiss for recipients
+  - name: Access
+    description: Sharelink access for recipients
   - name: Downloads
     description: Document download operations
   - name: Uploads
@@ -112,7 +112,7 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
         '403':
-          description: Permission denied
+          description: Accession denied
           schema:
             $ref: '#/definitions/ErrorResponse'
         '404':
@@ -188,7 +188,7 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
         '403':
-          description: Permission denied
+          description: Accession denied
           schema:
             $ref: '#/definitions/ErrorResponse'
 
@@ -199,7 +199,7 @@ paths:
       summary: Get sharelink details
       description: |
         Get detailed information about a sharelink, including tracking data such as 
-        permiss times, download counts, and expiration status.
+        access times, download counts, and expiration status.
       operationId: getSharelink
       security:
         - BearerAuth: []
@@ -215,7 +215,7 @@ paths:
           schema:
             $ref: '#/definitions/SharelinkDetailResponse'
         '403':
-          description: Permission denied
+          description: Accession denied
           schema:
             $ref: '#/definitions/ErrorResponse'
         '404':
@@ -228,7 +228,7 @@ paths:
         - Sharelinks
       summary: Update sharelink
       description: |
-        Update sharelink properties such as expiration date, password, or permiss settings.
+        Update sharelink properties such as expiration date, password, or access settings.
       operationId: updateSharelink
       security:
         - BearerAuth: []
@@ -253,7 +253,7 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
         '403':
-          description: Permission denied
+          description: Accession denied
           schema:
             $ref: '#/definitions/ErrorResponse'
         '404':
@@ -280,7 +280,7 @@ paths:
         '204':
           description: Sharelink revoked successfully
         '403':
-          description: Permission denied
+          description: Accession denied
           schema:
             $ref: '#/definitions/ErrorResponse'
         '404':
@@ -294,7 +294,7 @@ paths:
         - Analytics
       summary: Get sharelink analytics
       description: |
-        Get detailed analytics for a sharelink including permiss times, download counts 
+        Get detailed analytics for a sharelink including access times, download counts 
         per document, unique visitors, and other tracking metrics.
       operationId: getSharelinkAnalytics
       security:
@@ -321,7 +321,7 @@ paths:
           schema:
             $ref: '#/definitions/SharelinkAnalyticsResponse'
         '403':
-          description: Permission denied
+          description: Accession denied
           schema:
             $ref: '#/definitions/ErrorResponse'
         '404':
@@ -329,11 +329,11 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
 
-  /permiss/{sharelink_token}:
+  /access/{sharelink_token}:
     get:
       tags:
-        - Permiss
-      summary: Permiss sharelink (public)
+        - Access
+      summary: Access sharelink (public)
       description: |
         Public endpoint for recipients to access a sharelink.
         
@@ -345,7 +345,7 @@ paths:
         This endpoint does not require authentication for open sharelinks. For 
         password-protected sharelinks, use the password query parameter or authenticate 
         via the POST endpoint.
-      operationId: permissSharelink
+      operationId: accessSharelink
       parameters:
         - name: sharelink_token
           in: path
@@ -358,9 +358,9 @@ paths:
           description: Password if sharelink is password-protected
       responses:
         '200':
-          description: Sharelink permiss granted
+          description: Sharelink access granted
           schema:
-            $ref: '#/definitions/SharelinkPermissResponse'
+            $ref: '#/definitions/SharelinkAccessResponse'
         '401':
           description: Authentication required (password-protected link)
           schema:
@@ -376,10 +376,10 @@ paths:
 
     post:
       tags:
-        - Permiss
-      summary: Authenticate sharelink permiss
+        - Access
+      summary: Authenticate sharelink access
       description: |
-        Authenticate permiss to a password-protected sharelink. Returns a permiss token 
+        Authenticate access to a password-protected sharelink. Returns a access token 
         for subsequent requests.
       operationId: authenticateSharelink
       parameters:
@@ -405,9 +405,9 @@ paths:
           schema:
             type: object
             properties:
-              permiss_token:
+              access_token:
                 type: string
-                description: Temporary permiss token for this sharelink
+                description: Temporary access token for this sharelink
               expires_at:
                 type: string
                 format: date-time
@@ -425,10 +425,10 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
 
-  /permiss/{sharelink_token}/documents:
+  /access/{sharelink_token}/documents:
     get:
       tags:
-        - Permiss
+        - Access
       summary: List documents in sharelink
       description: |
         Get list of documents and folders available in the sharelink, with folder 
@@ -460,7 +460,7 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
 
-  /permiss/{sharelink_token}/download:
+  /access/{sharelink_token}/download:
     get:
       tags:
         - Downloads
@@ -508,7 +508,7 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
 
-  /permiss/{sharelink_token}/documents/{document_id}:
+  /access/{sharelink_token}/documents/{document_id}:
     get:
       tags:
         - Downloads
@@ -552,7 +552,7 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
 
-  /permiss/{sharelink_token}/upload:
+  /access/{sharelink_token}/upload:
     post:
       tags:
         - Uploads
@@ -657,7 +657,7 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
         '403':
-          description: Permission denied
+          description: Accession denied
           schema:
             $ref: '#/definitions/ErrorResponse'
 
@@ -791,7 +791,7 @@ definitions:
         properties:
           access_count:
             type: integer
-            description: Number of times sharelink has been permissed
+            description: Number of times sharelink has been accessed
           unique_visitors:
             type: integer
             description: Number of unique visitors
@@ -866,7 +866,7 @@ definitions:
             format: date-time
       access_count:
         type: integer
-        description: Total permisses in period
+        description: Total accesses in period
       unique_visitors:
         type: integer
         description: Unique visitors in period
@@ -879,7 +879,7 @@ definitions:
           $ref: '#/definitions/DocumentStats'
       access_timeline:
         type: array
-        description: Permiss events over time
+        description: Access events over time
         items:
           $ref: '#/definitions/AccessLogEntry'
       visitor_geography:
@@ -895,7 +895,7 @@ definitions:
             count:
               type: integer
 
-  SharelinkPermissResponse:
+  SharelinkAccessResponse:
     type: object
     required:
       - sharelink_id
@@ -1011,7 +1011,7 @@ definitions:
       action:
         type: string
         enum:
-          - permissed
+          - accessed
           - downloaded
           - uploaded
       document_id:
