@@ -39,6 +39,7 @@ Thumbs.db
 
 # Project specific
 *.http
+!**/_docs/*.http
 *.sh
 requests.http
 
