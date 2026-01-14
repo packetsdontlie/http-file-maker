@@ -1,0 +1,1100 @@
+swagger: '2.0'
+info:
+  title: Filevine Sharelink API
+  description: |
+    API for managing document sharelinks in Filevine. Sharelinks allow users to share 
+    documents with people outside of Filevine or with Filevine users who don't have 
+    access to the organization or project.
+    
+    **Key Features:**
+    - Create password-protected or open sharelinks
+    - Set expiration dates for sharelinks
+    - Share with specific users or generate random links
+    - Track link access and document downloads
+    - Support for 2-way sharelinks (recipients can upload files)
+    - Download entire folder structures as zip files
+    - Analytics and reporting on sharelink usage
+    
+    **Current Limitations:**
+    - Zip downloads have a 5GB limit
+    - Single file downloads have a 50GB limit
+    
+    **Testing the API:**
+    You can test API endpoints directly within this documentation interface. For more 
+    extensive testing, you can export this API specification and import it into tools 
+    like Postman. Click 'Export' to download the OpenAPI JSON configuration.
+    
+    For more information, see:
+    - [Testing with Filevine's API](https://support.filevine.com/hc/en-us/articles/28680844158619-Testing-with-Filevine-s-API)
+    - [API Authentication Q&A](https://support.filevine.com/hc/en-us/articles/29937964706203-API-Authentication-Q-A)
+  version: '1.0.0'
+  contact:
+    name: Filevine API Support
+    url: https://support.filevine.com
+
+host: api.filevine.com
+basePath: /v2-us/sharelinks
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+
+securityDefinitions:
+  BearerAuth:
+    type: apiKey
+    name: Authorization
+    in: header
+    description: |
+      Personal Access Token (PAT) authentication for Filevine users.
+      
+      To generate a PAT:
+      1. Navigate to the 'Access Tokens' section in your Filevine account settings
+      2. Create a new token, assigning it a descriptive name
+      3. Use this token in the Authorization header as: `Bearer <your-token>`
+      
+      For more information, see the [API Authentication Q&A](https://support.filevine.com/hc/en-us/articles/29937964706203-API-Authentication-Q-A).
+  SharelinkToken:
+    type: apiKey
+    name: X-Sharelink-Token
+    in: header
+    description: Token for permissing sharelinks (for recipients)
+
+tags:
+  - name: Sharelinks
+    description: Sharelink creation and management
+  - name: Permiss
+    description: Sharelink permiss for recipients
+  - name: Downloads
+    description: Document download operations
+  - name: Uploads
+    description: File upload operations (2-way sharelinks)
+  - name: Analytics
+    description: Sharelink tracking and analytics
+  - name: Reports
+    description: Reporting and audit endpoints
+
+paths:
+  /sharelinks:
+    post:
+      tags:
+        - Sharelinks
+      summary: Create a new sharelink
+      description: |
+        Create a sharelink for one or more documents or folders.
+        
+        **Workflow:**
+        1. Specify the documents or folders to include in the `resources` array
+        2. Optionally set a password for security
+        3. Optionally set an expiration date
+        4. Optionally specify recipients (email addresses) or leave empty for a random link
+        5. Set `two_way: true` if you want recipients to be able to upload files
+        
+        The sharelink can be password-protected, have an expiration date, and be shared 
+        with specific users or generated as a random link.
+      operationId: createSharelink
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateSharelinkRequest'
+      responses:
+        '201':
+          description: Sharelink created successfully
+          schema:
+            $ref: '#/definitions/SharelinkResponse'
+        '400':
+          description: Bad request (invalid parameters)
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '403':
+          description: Permission denied
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '404':
+          description: Document or folder not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '413':
+          description: Payload too large (exceeds size limits)
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '500':
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+    get:
+      tags:
+        - Sharelinks
+      summary: List sharelinks
+      description: |
+        List all sharelinks across projects. Can be filtered by project, creator, 
+        status, or date range. Useful for reporting and audit purposes.
+      operationId: listSharelinks
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: project_id
+          in: query
+          type: string
+          description: Filter by project ID
+        - name: creator_id
+          in: query
+          type: string
+          description: Filter by creator user ID
+        - name: status
+          in: query
+          type: string
+          enum:
+            - active
+            - expired
+            - revoked
+          description: Filter by sharelink status
+        - name: created_after
+          in: query
+          type: string
+          format: date-time
+          description: Filter sharelinks created after this date
+        - name: created_before
+          in: query
+          type: string
+          format: date-time
+          description: Filter sharelinks created before this date
+        - name: limit
+          in: query
+          type: integer
+          default: 50
+          minimum: 1
+          maximum: 500
+          description: Maximum number of results
+        - name: offset
+          in: query
+          type: integer
+          default: 0
+          minimum: 0
+          description: Pagination offset
+      responses:
+        '200':
+          description: List of sharelinks
+          schema:
+            $ref: '#/definitions/SharelinkListResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '403':
+          description: Permission denied
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+  /sharelinks/{sharelink_id}:
+    get:
+      tags:
+        - Sharelinks
+      summary: Get sharelink details
+      description: |
+        Get detailed information about a sharelink, including tracking data such as 
+        permiss times, download counts, and expiration status.
+      operationId: getSharelink
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: sharelink_id
+          in: path
+          required: true
+          type: string
+          description: Sharelink ID
+      responses:
+        '200':
+          description: Sharelink details
+          schema:
+            $ref: '#/definitions/SharelinkDetailResponse'
+        '403':
+          description: Permission denied
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '404':
+          description: Sharelink not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+    patch:
+      tags:
+        - Sharelinks
+      summary: Update sharelink
+      description: |
+        Update sharelink properties such as expiration date, password, or permiss settings.
+      operationId: updateSharelink
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: sharelink_id
+          in: path
+          required: true
+          type: string
+          description: Sharelink ID
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateSharelinkRequest'
+      responses:
+        '200':
+          description: Sharelink updated successfully
+          schema:
+            $ref: '#/definitions/SharelinkResponse'
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '403':
+          description: Permission denied
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '404':
+          description: Sharelink not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+    delete:
+      tags:
+        - Sharelinks
+      summary: Revoke sharelink
+      description: |
+        Revoke a sharelink, making it inaccessible to recipients.
+      operationId: revokeSharelink
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: sharelink_id
+          in: path
+          required: true
+          type: string
+          description: Sharelink ID
+      responses:
+        '204':
+          description: Sharelink revoked successfully
+        '403':
+          description: Permission denied
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '404':
+          description: Sharelink not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+  /sharelinks/{sharelink_id}/analytics:
+    get:
+      tags:
+        - Analytics
+      summary: Get sharelink analytics
+      description: |
+        Get detailed analytics for a sharelink including permiss times, download counts 
+        per document, unique visitors, and other tracking metrics.
+      operationId: getSharelinkAnalytics
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: sharelink_id
+          in: path
+          required: true
+          type: string
+          description: Sharelink ID
+        - name: start_date
+          in: query
+          type: string
+          format: date-time
+          description: Start date for analytics range
+        - name: end_date
+          in: query
+          type: string
+          format: date-time
+          description: End date for analytics range
+      responses:
+        '200':
+          description: Analytics data
+          schema:
+            $ref: '#/definitions/SharelinkAnalyticsResponse'
+        '403':
+          description: Permission denied
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '404':
+          description: Sharelink not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+  /permiss/{sharelink_token}:
+    get:
+      tags:
+        - Permiss
+      summary: Permiss sharelink (public)
+      description: |
+        Public endpoint for recipients to access a sharelink.
+        
+        **Workflow:**
+        1. Recipient visits the sharelink URL or uses the sharelink token
+        2. If password-protected, provide the password via query parameter
+        3. Returns metadata about the sharelink and available documents
+        
+        This endpoint does not require authentication for open sharelinks. For 
+        password-protected sharelinks, use the password query parameter or authenticate 
+        via the POST endpoint.
+      operationId: permissSharelink
+      parameters:
+        - name: sharelink_token
+          in: path
+          required: true
+          type: string
+          description: Sharelink token (from the sharelink URL)
+        - name: password
+          in: query
+          type: string
+          description: Password if sharelink is password-protected
+      responses:
+        '200':
+          description: Sharelink permiss granted
+          schema:
+            $ref: '#/definitions/SharelinkPermissResponse'
+        '401':
+          description: Authentication required (password-protected link)
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '403':
+          description: Sharelink expired or revoked
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '404':
+          description: Sharelink not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+    post:
+      tags:
+        - Permiss
+      summary: Authenticate sharelink permiss
+      description: |
+        Authenticate permiss to a password-protected sharelink. Returns a permiss token 
+        for subsequent requests.
+      operationId: authenticateSharelink
+      parameters:
+        - name: sharelink_token
+          in: path
+          required: true
+          type: string
+          description: Sharelink token
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - password
+            properties:
+              password:
+                type: string
+                description: Sharelink password
+      responses:
+        '200':
+          description: Authentication successful
+          schema:
+            type: object
+            properties:
+              permiss_token:
+                type: string
+                description: Temporary permiss token for this sharelink
+              expires_at:
+                type: string
+                format: date-time
+                description: Token expiration time
+        '401':
+          description: Invalid password
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '403':
+          description: Sharelink expired or revoked
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '404':
+          description: Sharelink not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+  /permiss/{sharelink_token}/documents:
+    get:
+      tags:
+        - Permiss
+      summary: List documents in sharelink
+      description: |
+        Get list of documents and folders available in the sharelink, with folder 
+        structure preserved.
+      operationId: listSharelinkDocuments
+      security:
+        - SharelinkToken: []
+      parameters:
+        - name: sharelink_token
+          in: path
+          required: true
+          type: string
+          description: Sharelink token
+      responses:
+        '200':
+          description: List of documents and folders
+          schema:
+            $ref: '#/definitions/SharelinkDocumentListResponse'
+        '401':
+          description: Authentication required
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '403':
+          description: Sharelink expired or revoked
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '404':
+          description: Sharelink not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+  /permiss/{sharelink_token}/download:
+    get:
+      tags:
+        - Downloads
+      summary: Download all documents as zip
+      description: |
+        Download all documents in the sharelink as a zip file, preserving folder 
+        structure.
+        
+        **Workflow:**
+        1. Authenticate with the sharelink token (if password-protected)
+        2. Call this endpoint to download all documents as a single zip file
+        3. The folder structure is preserved in the zip archive
+        
+        **Limitations:**
+        - Zip downloads have a 5GB limit
+        - If the total size exceeds 5GB, use individual document downloads instead
+      operationId: downloadSharelinkZip
+      security:
+        - SharelinkToken: []
+      parameters:
+        - name: sharelink_token
+          in: path
+          required: true
+          type: string
+          description: Sharelink token
+      responses:
+        '200':
+          description: Zip file download
+          schema:
+            type: file
+        '400':
+          description: Download size exceeds 5GB limit
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '401':
+          description: Authentication required
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '403':
+          description: Sharelink expired or revoked
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '404':
+          description: Sharelink not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+  /permiss/{sharelink_token}/documents/{document_id}:
+    get:
+      tags:
+        - Downloads
+      summary: Download a single document
+      description: |
+        Download a single document from the sharelink. Note: Has a 50GB limit for 
+        single file downloads.
+      operationId: downloadSharelinkDocument
+      security:
+        - SharelinkToken: []
+      parameters:
+        - name: sharelink_token
+          in: path
+          required: true
+          type: string
+          description: Sharelink token
+        - name: document_id
+          in: path
+          required: true
+          type: string
+          description: Document ID
+      responses:
+        '200':
+          description: Document file download
+          schema:
+            type: file
+        '400':
+          description: File size exceeds 50GB limit
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '401':
+          description: Authentication required
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '403':
+          description: Sharelink expired or revoked
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '404':
+          description: Document or sharelink not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+  /permiss/{sharelink_token}/upload:
+    post:
+      tags:
+        - Uploads
+      summary: Upload file to sharelink (2-way)
+      description: |
+        Upload a file to a 2-way sharelink.
+        
+        **Workflow:**
+        1. Ensure the sharelink has `two_way: true` enabled
+        2. Authenticate with the sharelink token (if password-protected)
+        3. Upload the file using multipart/form-data
+        4. Optionally specify a folder path within the sharelink structure
+        
+        The file will be added to Filevine and marked as originating from the sharelink 
+        (`sharelink_origin: true`). This triggers a notification to the sharelink creator.
+      operationId: uploadToSharelink
+      security:
+        - SharelinkToken: []
+      parameters:
+        - name: sharelink_token
+          in: path
+          required: true
+          type: string
+          description: Sharelink token
+        - name: file
+          in: formData
+          required: true
+          type: file
+          description: File to upload
+        - name: folder_path
+          in: formData
+          type: string
+          description: Optional folder path within the sharelink structure
+      responses:
+        '201':
+          description: File uploaded successfully
+          schema:
+            $ref: '#/definitions/UploadResponse'
+        '400':
+          description: Bad request (invalid file or exceeds size limit)
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '401':
+          description: Authentication required
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '403':
+          description: Sharelink is not 2-way or has expired/revoked
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '404':
+          description: Sharelink not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '413':
+          description: File too large
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+  /reports/sharelinks:
+    get:
+      tags:
+        - Reports
+      summary: Generate sharelink report
+      description: |
+        Generate a report of sharelinks across projects. Can be used with Report Builder 
+        or as a standalone endpoint. Returns sharelink metadata and associated documents.
+      operationId: generateSharelinkReport
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: project_id
+          in: query
+          type: string
+          description: Filter by project ID
+        - name: format
+          in: query
+          type: string
+          enum:
+            - json
+            - csv
+            - xlsx
+          default: json
+          description: Report format
+        - name: include_documents
+          in: query
+          type: boolean
+          default: false
+          description: Include document details in report
+        - name: include_analytics
+          in: query
+          type: boolean
+          default: false
+          description: Include analytics data in report
+      responses:
+        '200':
+          description: Report generated successfully
+          schema:
+            type: file
+        '400':
+          description: Bad request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '403':
+          description: Permission denied
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+definitions:
+  CreateSharelinkRequest:
+    type: object
+    required:
+      - resources
+    properties:
+      resources:
+        type: array
+        description: List of documents or folders to include in sharelink. Must include at least one resource.
+        items:
+          $ref: '#/definitions/SharelinkResource'
+        minItems: 1
+        example:
+          - type: document
+            id: "doc_12345"
+          - type: folder
+            id: "folder_67890"
+      password:
+        type: string
+        description: Optional password for sharelink protection. Must be between 4-128 characters.
+        minLength: 4
+        maxLength: 128
+        example: "SecurePass123!"
+      expires_at:
+        type: string
+        format: date-time
+        description: Optional expiration date/time for sharelink. After this time, the sharelink will automatically become inactive.
+        example: "2024-12-31T23:59:59Z"
+      recipients:
+        type: array
+        description: Optional list of specific recipients (email addresses). If not provided, generates a random link that can be shared with anyone.
+        items:
+          type: string
+          format: email
+        example:
+          - "recipient@example.com"
+          - "co-counsel@lawfirm.com"
+      two_way:
+        type: boolean
+        default: false
+        description: Enable 2-way sharing (recipients can upload files). When enabled, uploaded files will trigger notifications to the sharelink creator.
+        example: true
+      project_id:
+        type: string
+        description: Project ID where documents belong
+        example: "project_abc123"
+      folder_structure:
+        type: boolean
+        default: true
+        description: Preserve folder structure in downloads. When true, zip downloads maintain the original folder hierarchy.
+        example: true
+
+  SharelinkResource:
+    type: object
+    required:
+      - type
+      - id
+    properties:
+      type:
+        type: string
+        enum:
+          - document
+          - folder
+        description: Type of resource
+      id:
+        type: string
+        description: Document ID or folder ID
+        example: "doc_12345"
+      path:
+        type: string
+        description: Optional path within folder structure
+        example: "contracts/2024/"
+
+  SharelinkResponse:
+    type: object
+    required:
+      - sharelink_id
+      - token
+      - url
+      - created_at
+      - status
+    properties:
+      sharelink_id:
+        type: string
+        description: Unique sharelink identifier
+        example: "sl_abc123xyz"
+      token:
+        type: string
+        description: Sharelink token for URL (use in sharelink endpoints)
+        example: "a1b2c3d4e5f6"
+      url:
+        type: string
+        format: uri
+        description: Full sharelink URL to share with recipients
+        example: "https://share.filevine.com/a1b2c3d4e5f6"
+      created_at:
+        type: string
+        format: date-time
+        description: Creation timestamp
+      expires_at:
+        type: string
+        format: date-time
+        description: Expiration timestamp (if set)
+      status:
+        type: string
+        enum:
+          - active
+          - expired
+          - revoked
+        description: Current status
+      password_protected:
+        type: boolean
+        description: Whether sharelink is password-protected
+      two_way:
+        type: boolean
+        description: Whether 2-way sharing is enabled
+      creator:
+        $ref: '#/definitions/UserInfo'
+      resources:
+        type: array
+        items:
+          $ref: '#/definitions/SharelinkResource'
+
+  SharelinkDetailResponse:
+    allOf:
+      - $ref: '#/definitions/SharelinkResponse'
+      - type: object
+        properties:
+          access_count:
+            type: integer
+            description: Number of times sharelink has been permissed
+          unique_visitors:
+            type: integer
+            description: Number of unique visitors
+          download_count:
+            type: integer
+            description: Total number of document downloads
+          last_accessed_at:
+            type: string
+            format: date-time
+            description: Last access timestamp
+          access_log:
+            type: array
+            description: Recent access log entries
+            items:
+              $ref: '#/definitions/AccessLogEntry'
+          document_stats:
+            type: array
+            description: Download statistics per document
+            items:
+              $ref: '#/definitions/DocumentStats'
+
+  SharelinkListResponse:
+    type: object
+    required:
+      - sharelinks
+      - total
+    properties:
+      sharelinks:
+        type: array
+        items:
+          $ref: '#/definitions/SharelinkResponse'
+      total:
+        type: integer
+        description: Total number of sharelinks matching filters
+      limit:
+        type: integer
+        description: Results per page
+      offset:
+        type: integer
+        description: Pagination offset
+
+  UpdateSharelinkRequest:
+    type: object
+    properties:
+      password:
+        type: string
+        description: Update password (set to null to remove)
+      expires_at:
+        type: string
+        format: date-time
+        description: Update expiration date
+      two_way:
+        type: boolean
+        description: Enable/disable 2-way sharing
+
+  SharelinkAnalyticsResponse:
+    type: object
+    required:
+      - sharelink_id
+      - period
+    properties:
+      sharelink_id:
+        type: string
+      period:
+        type: object
+        properties:
+          start:
+            type: string
+            format: date-time
+          end:
+            type: string
+            format: date-time
+      access_count:
+        type: integer
+        description: Total permisses in period
+      unique_visitors:
+        type: integer
+        description: Unique visitors in period
+      download_count:
+        type: integer
+        description: Total downloads in period
+      document_stats:
+        type: array
+        items:
+          $ref: '#/definitions/DocumentStats'
+      access_timeline:
+        type: array
+        description: Permiss events over time
+        items:
+          $ref: '#/definitions/AccessLogEntry'
+      visitor_geography:
+        type: array
+        description: Visitor locations (if available)
+        items:
+          type: object
+          properties:
+            country:
+              type: string
+            region:
+              type: string
+            count:
+              type: integer
+
+  SharelinkPermissResponse:
+    type: object
+    required:
+      - sharelink_id
+      - token
+      - status
+      - documents
+    properties:
+      sharelink_id:
+        type: string
+      token:
+        type: string
+      status:
+        type: string
+        enum:
+          - active
+          - expired
+          - revoked
+      title:
+        type: string
+        description: Optional sharelink title
+      documents:
+        type: array
+        items:
+          $ref: '#/definitions/SharelinkDocument'
+      two_way:
+        type: boolean
+        description: Whether uploads are allowed
+      created_at:
+        type: string
+        format: date-time
+      expires_at:
+        type: string
+        format: date-time
+
+  SharelinkDocument:
+    type: object
+    required:
+      - document_id
+      - name
+      - type
+    properties:
+      document_id:
+        type: string
+      name:
+        type: string
+        description: Document name
+      type:
+        type: string
+        enum:
+          - document
+          - folder
+      size:
+        type: integer
+        description: File size in bytes (for documents)
+      mime_type:
+        type: string
+        description: MIME type (for documents)
+      path:
+        type: string
+        description: Path within folder structure
+      children:
+        type: array
+        description: Child documents/folders (for folders)
+        items:
+          $ref: '#/definitions/SharelinkDocument'
+
+  SharelinkDocumentListResponse:
+    type: object
+    required:
+      - documents
+    properties:
+      documents:
+        type: array
+        items:
+          $ref: '#/definitions/SharelinkDocument'
+      total_size:
+        type: integer
+        description: Total size of all documents in bytes
+
+  UploadResponse:
+    type: object
+    required:
+      - document_id
+      - name
+      - uploaded_at
+    properties:
+      document_id:
+        type: string
+        description: New document ID in Filevine
+      name:
+        type: string
+        description: Uploaded file name
+      size:
+        type: integer
+        description: File size in bytes
+      sharelink_origin:
+        type: boolean
+        default: true
+        description: Indicates file came from sharelink
+      uploaded_at:
+        type: string
+        format: date-time
+
+  AccessLogEntry:
+    type: object
+    required:
+      - timestamp
+      - action
+    properties:
+      timestamp:
+        type: string
+        format: date-time
+      action:
+        type: string
+        enum:
+          - permissed
+          - downloaded
+          - uploaded
+      document_id:
+        type: string
+        description: Document ID (for download/upload actions)
+      ip_address:
+        type: string
+        description: IP address of visitor
+      user_agent:
+        type: string
+        description: User agent string
+      recipient_email:
+        type: string
+        format: email
+        description: Recipient email (if known)
+
+  DocumentStats:
+    type: object
+    required:
+      - document_id
+      - name
+      - download_count
+    properties:
+      document_id:
+        type: string
+      name:
+        type: string
+      download_count:
+        type: integer
+        description: Number of times document was downloaded
+      last_downloaded_at:
+        type: string
+        format: date-time
+      size:
+        type: integer
+        description: File size in bytes
+
+  UserInfo:
+    type: object
+    required:
+      - user_id
+      - email
+    properties:
+      user_id:
+        type: string
+      email:
+        type: string
+        format: email
+      name:
+        type: string
+        description: User's display name
+
+  ErrorResponse:
+    type: object
+    required:
+      - error
+    properties:
+      error:
+        type: object
+        required:
+          - code
+          - message
+        properties:
+          code:
+            type: string
+            enum:
+              - INVALID_REQUEST
+              - PERMISSION_DENIED
+              - NOT_FOUND
+              - EXPIRED
+              - REVOKED
+              - SIZE_LIMIT_EXCEEDED
+              - INVALID_PASSWORD
+              - INVALID_TOKEN
+              - UPLOAD_NOT_ALLOWED
+              - FOLDER_STRUCTURE_TOO_LARGE
+            description: Error code
+          message:
+            type: string
+            description: Human-readable error message
+          details:
+            type: object
+            description: Additional error context
+      request_id:
+        type: string
+        description: Request ID for debugging

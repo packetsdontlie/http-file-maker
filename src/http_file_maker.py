@@ -7,6 +7,11 @@ import argparse
 import sys
 from typing import Dict, List, Optional
 
+try:
+    from .openapi_parser import generate_http_file_from_openapi
+except ImportError:
+    from openapi_parser import generate_http_file_from_openapi
+
 
 class HTTPFileMaker:
     """Generates HTTP request files in various formats."""
@@ -113,11 +118,15 @@ Examples:
   %(prog)s GET https://api.example.com/users
   %(prog)s POST https://api.example.com/users --header "Content-Type: application/json" --body '{"name": "John"}'
   %(prog)s GET https://api.example.com/users --format curl --output request.sh
+  %(prog)s --from-openapi spec.yaml --output api.http
         """
     )
     
-    parser.add_argument('method', help='HTTP method (GET, POST, PUT, DELETE, etc.)')
-    parser.add_argument('url', help='Target URL')
+    parser.add_argument('--from-openapi', dest='openapi_file', metavar='FILE',
+                       help='Generate HTTP file from OpenAPI/Swagger YAML file')
+    
+    parser.add_argument('method', nargs='?', help='HTTP method (GET, POST, PUT, DELETE, etc.)')
+    parser.add_argument('url', nargs='?', help='Target URL')
     parser.add_argument('-H', '--header', dest='headers', action='append', default=[],
                        help='HTTP header (can be used multiple times)')
     parser.add_argument('-b', '--body', help='Request body content')
@@ -126,6 +135,23 @@ Examples:
     parser.add_argument('-o', '--output', help='Output file path (default: stdout)')
     
     args = parser.parse_args()
+    
+    # Handle OpenAPI file parsing
+    if args.openapi_file:
+        try:
+            content = generate_http_file_from_openapi(args.openapi_file, args.output)
+            if not args.output:
+                print(content)
+            else:
+                print(f"HTTP request file written to: {args.output}", file=sys.stderr)
+        except Exception as e:
+            print(f"Error parsing OpenAPI file: {e}", file=sys.stderr)
+            sys.exit(1)
+        return
+    
+    # Validate required arguments for single request mode
+    if not args.method or not args.url:
+        parser.error("method and url are required unless using --from-openapi")
     
     # Parse headers
     headers = parse_headers(args.headers)

@@ -1,7 +1,3 @@
 # HTTP File Maker Requirements
-# No external dependencies required for basic functionality
-
-# Optional: for future enhancements
-# requests>=2.31.0
-# pyyaml>=6.0
+pyyaml>=6.0
 
