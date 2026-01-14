@@ -62,6 +62,32 @@ pip install -r requirements.txt
 pytest
 ```
 
+## Ports
+
+This project has been ported to other languages:
+
+### C# / .NET
+
+A C# port is available in `ports/c-sharp/`. It provides the same functionality as the Python version.
+
+**Requirements:**
+- .NET 8.0 SDK or later
+
+**Building and Running:**
+```bash
+cd ports/c-sharp
+dotnet build
+dotnet run -- --help
+```
+
+**Example:**
+```bash
+dotnet run -- GET https://api.example.com/users
+dotnet run -- --from-openapi ../../_docs/sharelink-api-spec.yaml --output api.http
+```
+
+See `ports/c-sharp/README.md` for more details.
+
 ## License
 
 MIT
