@@ -1,0 +1,125 @@
+### Generated from OpenAPI/Swagger specification
+### Base URL: https://api.filevine.com/v2-us/sharelinks
+
+### Access
+
+### Access sharelink (public)
+### Public endpoint for recipients to access a sharelink.
+GET https://api.filevine.com/v2-us/sharelinks/access/<sharelink_token>?password=<password>
+
+
+### Authenticate sharelink access
+### Authenticate access to a password-protected sharelink. Returns a access token
+POST https://api.filevine.com/v2-us/sharelinks/access/<sharelink_token>
+Content-Type: application/json
+
+{
+  "password": "<password>"
+}
+
+
+### List documents in sharelink
+### Get list of documents and folders available in the sharelink, with folder
+GET https://api.filevine.com/v2-us/sharelinks/access/<sharelink_token>/documents
+X-Sharelink-Token: <your-token>
+
+
+### Analytics
+
+### Get sharelink analytics
+### Get detailed analytics for a sharelink including access times, download counts
+GET https://api.filevine.com/v2-us/sharelinks/sharelinks/<sharelink_id>/analytics?start_date=<start_date>&end_date=<end_date>
+Authorization: Bearer <your-token>
+
+
+### Downloads
+
+### Download all documents as zip
+### Download all documents in the sharelink as a zip file, preserving folder
+GET https://api.filevine.com/v2-us/sharelinks/access/<sharelink_token>/download
+X-Sharelink-Token: <your-token>
+
+
+### Download a single document
+### Download a single document from the sharelink. Note: Has a 50GB limit for
+GET https://api.filevine.com/v2-us/sharelinks/access/<sharelink_token>/documents/<document_id>
+X-Sharelink-Token: <your-token>
+
+
+### Reports
+
+### Generate sharelink report
+### Generate a report of sharelinks across projects. Can be used with Report Builder
+GET https://api.filevine.com/v2-us/sharelinks/reports/sharelinks?project_id=<project_id>&format=json&include_documents=False&include_analytics=False
+Authorization: Bearer <your-token>
+
+
+### Sharelinks
+
+### Create a new sharelink
+### Create a sharelink for one or more documents or folders.
+POST https://api.filevine.com/v2-us/sharelinks/sharelinks
+Authorization: Bearer <your-token>
+Content-Type: application/json
+
+{
+  "resources": [
+    {
+      "type": "document",
+      "id": "doc_12345"
+    },
+    {
+      "type": "folder",
+      "id": "folder_67890"
+    }
+  ],
+  "password": "SecurePass123!",
+  "expires_at": "2024-12-31T23:59:59Z",
+  "recipients": [
+    "recipient@example.com",
+    "co-counsel@lawfirm.com"
+  ],
+  "two_way": true,
+  "project_id": "project_abc123",
+  "folder_structure": true
+}
+
+
+### List sharelinks
+### List all sharelinks across projects. Can be filtered by project, creator,
+GET https://api.filevine.com/v2-us/sharelinks/sharelinks?project_id=<project_id>&creator_id=<creator_id>&status=<status>&created_after=<created_after>&created_before=<created_before>&limit=50&offset=0
+Authorization: Bearer <your-token>
+
+
+### Get sharelink details
+### Get detailed information about a sharelink, including tracking data such as
+GET https://api.filevine.com/v2-us/sharelinks/sharelinks/<sharelink_id>
+Authorization: Bearer <your-token>
+
+
+### Update sharelink
+### Update sharelink properties such as expiration date, password, or access settings.
+PATCH https://api.filevine.com/v2-us/sharelinks/sharelinks/<sharelink_id>
+Authorization: Bearer <your-token>
+Content-Type: application/json
+
+{
+  "password": "<password>",
+  "expires_at": "2024-12-31T23:59:59Z",
+  "two_way": false
+}
+
+
+### Revoke sharelink
+### Revoke a sharelink, making it inaccessible to recipients.
+DELETE https://api.filevine.com/v2-us/sharelinks/sharelinks/<sharelink_id>
+Authorization: Bearer <your-token>
+
+
+### Uploads
+
+### Upload file to sharelink (2-way)
+### Upload a file to a 2-way sharelink.
+POST https://api.filevine.com/v2-us/sharelinks/access/<sharelink_token>/upload
+X-Sharelink-Token: <your-token>
+
