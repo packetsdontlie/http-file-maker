@@ -1,0 +1,54 @@
+title HTTP File Maker - Sequence Diagram
+
+participant User
+participant CLI
+participant HTTPFileMaker
+participant OpenAPIParser
+participant FileSystem
+
+== Single Request Generation ==
+
+User->CLI: python3 http_file_maker.py\nGET https://api.example.com/users\n--header "Authorization: Bearer token"
+activate CLI
+CLI->CLI: Parse arguments
+CLI->HTTPFileMaker: new HTTPFileMaker(method, url, headers, body, format)
+activate HTTPFileMaker
+HTTPFileMaker->HTTPFileMaker: Validate format
+HTTPFileMaker->HTTPFileMaker: Generate request\n(REST Client/HTTPie/cURL)
+HTTPFileMaker-->>CLI: Generated content
+deactivate HTTPFileMaker
+alt Output file specified
+    CLI->FileSystem: Write to file
+    FileSystem-->>CLI: File written
+    CLI-->>User: "HTTP request file written to: output.http"
+else Output to stdout
+    CLI-->>User: Print content
+end
+deactivate CLI
+
+== OpenAPI Specification Parsing ==
+
+User->CLI: python3 http_file_maker.py\n--from-openapi spec.yaml\n--output api.http
+activate CLI
+CLI->CLI: Parse arguments
+CLI->OpenAPIParser: new OpenAPIParser(yaml_file)
+activate OpenAPIParser
+OpenAPIParser->FileSystem: Read YAML file
+FileSystem-->>OpenAPIParser: YAML content
+OpenAPIParser->OpenAPIParser: Parse YAML spec
+OpenAPIParser->OpenAPIParser: Build base URL
+OpenAPIParser->OpenAPIParser: Extract endpoints
+loop For each endpoint
+    OpenAPIParser->OpenAPIParser: Get security headers
+    OpenAPIParser->OpenAPIParser: Get request body\n(from schema)
+    OpenAPIParser->OpenAPIParser: Build URL with params
+end
+OpenAPIParser->OpenAPIParser: Group by tags
+OpenAPIParser-->>CLI: List of endpoints
+deactivate OpenAPIParser
+CLI->CLI: Generate HTTP file content
+CLI->FileSystem: Write to output file
+FileSystem-->>CLI: File written
+CLI-->>User: "HTTP request file written to: api.http"
+deactivate CLI
+
