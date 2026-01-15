@@ -4,7 +4,7 @@ A C#/.NET port of the HTTP File Maker tool for generating HTTP request files in 
 
 ## Requirements
 
-- .NET 8.0 SDK or later
+- .NET 10.0 SDK or later
 
 ## Building
 

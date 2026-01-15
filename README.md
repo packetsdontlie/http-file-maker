@@ -95,7 +95,7 @@ This project has been ported to other languages:
 A C# port is available in `ports/c-sharp/`. It provides the same functionality as the Python version.
 
 **Requirements:**
-- .NET 8.0 SDK or later
+- .NET 10.0 SDK or later
 
 **Building and Running:**
 ```bash
