@@ -117,20 +117,20 @@ public class OpenApiParser
                             }
 
                             // Generate example from properties
-                            if (definition.TryGetValue("properties", out var propsObj) && propsObj is Dictionary<string, object?> properties)
+                            if (definition.TryGetValue("properties", out var defPropsObj) && defPropsObj is Dictionary<string, object?> defProperties)
                             {
-                                var example = GenerateExampleFromProperties(properties, definition);
-                                return JsonSerializer.Serialize(example, new JsonSerializerOptions { WriteIndented = true });
+                                var defExample = GenerateExampleFromProperties(defProperties, definition);
+                                return JsonSerializer.Serialize(defExample, new JsonSerializerOptions { WriteIndented = true });
                             }
                         }
                     }
                     // Handle inline schema
                     else if (GetValue<string>(schema, "type") == "object")
                     {
-                        if (schema.TryGetValue("properties", out var propsObj) && propsObj is Dictionary<string, object?> properties)
+                        if (schema.TryGetValue("properties", out var inlinePropsObj) && inlinePropsObj is Dictionary<string, object?> inlineProperties)
                         {
-                            var example = GenerateExampleFromProperties(properties, schema);
-                            return JsonSerializer.Serialize(example, new JsonSerializerOptions { WriteIndented = true });
+                            var inlineExample = GenerateExampleFromProperties(inlineProperties, schema);
+                            return JsonSerializer.Serialize(inlineExample, new JsonSerializerOptions { WriteIndented = true });
                         }
                     }
                 }
