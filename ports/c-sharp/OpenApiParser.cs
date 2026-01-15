@@ -119,8 +119,8 @@ public class OpenApiParser
                             // Generate example from properties
                             if (definition.TryGetValue("properties", out var defPropsObj) && defPropsObj is Dictionary<string, object?> defProperties)
                             {
-                                var defExample = GenerateExampleFromProperties(defProperties, definition);
-                                return JsonSerializer.Serialize(defExample, new JsonSerializerOptions { WriteIndented = true });
+                                var generatedExample = GenerateExampleFromProperties(defProperties, definition);
+                                return JsonSerializer.Serialize(generatedExample, new JsonSerializerOptions { WriteIndented = true });
                             }
                         }
                     }
