@@ -22,7 +22,7 @@ Or build and run the executable:
 
 ```bash
 dotnet build -c Release
-./bin/Release/net8.0/HttpFileMaker [arguments]
+./bin/Release/net10.0/HttpFileMaker [arguments]
 ```
 
 ## Usage
