@@ -13,11 +13,35 @@ A Python tool for generating HTTP request files in various formats (REST Client,
 
 ## Installation
 
+### From PyPI (when published)
+
 ```bash
+pip install http-file-maker
+```
+
+### From source
+
+```bash
+# Clone the repository
+git clone https://github.com/packetsdontlie/http-file-maker.git
+cd http-file-maker
+
+# Install in development mode
+pip install -e .
+
+# Or install dependencies only
 pip install -r requirements.txt
 ```
 
 ## Usage
+
+After installation, you can use the `http-file-maker` command:
+
+```bash
+http-file-maker --help
+```
+
+Or run directly from source:
 
 ```bash
 python src/http_file_maker.py --help
@@ -29,15 +53,15 @@ python src/http_file_maker.py --help
 
 ```bash
 # Generate a GET request
-python3 src/http_file_maker.py GET https://api.example.com/users
+http-file-maker GET https://api.example.com/users
 
 # Generate a POST request with JSON body
-python3 src/http_file_maker.py POST https://api.example.com/users \
+http-file-maker POST https://api.example.com/users \
   --header "Content-Type: application/json" \
   --body '{"name": "John", "email": "john@example.com"}'
 
 # Generate a file in REST Client format
-python3 src/http_file_maker.py GET https://api.example.com/users \
+http-file-maker GET https://api.example.com/users \
   --format rest-client \
   --output requests.http
 ```
@@ -46,7 +70,7 @@ python3 src/http_file_maker.py GET https://api.example.com/users \
 
 ```bash
 # Generate HTTP file from OpenAPI YAML specification
-python3 src/http_file_maker.py --from-openapi _docs/sharelink-api-spec.yaml --output api.http
+http-file-maker --from-openapi _docs/sharelink-api-spec.yaml --output api.http
 
 # This will generate a complete .http file with all endpoints from the spec,
 # including authentication headers, request bodies, and query parameters
